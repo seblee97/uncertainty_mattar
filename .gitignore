@@ -1,6 +1,8 @@
 *.egg-info
 *.DS_Store
-*.ipynb_checkpoints
+*ipynb_checkpoints
+*.vscode
 src/
 *.mp4
 *.png
+*__pycache__
