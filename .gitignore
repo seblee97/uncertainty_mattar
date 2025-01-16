@@ -2,3 +2,5 @@
 *.DS_Store
 *.ipynb_checkpoints
 src/
+*.mp4
+*.png
