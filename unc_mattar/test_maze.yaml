@@ -1,4 +1,4 @@
-start_position: []
+start_position: [1, 4]
 
 key_positions: []
 
@@ -12,4 +12,4 @@ reward_positions:
 reward_statistics:
     gaussian:
         mean: 1
-        variance: 0
+        variance: 0.1
