@@ -1,9 +1,10 @@
 from key_door import key_door_env
 from key_door import visualisation_env
 
-from unc_mattar.agents import q_learner
+from unc_mattar.agents import q_learner, dyna_learner
 
 import numpy as np
+import copy
 
 
 class Runner:
@@ -16,6 +17,8 @@ class Runner:
         num_episodes,
         train_episode_timeout,
         test_episode_timeout,
+        pre_episode_planning_steps,
+        post_episode_planning_steps,
         map_path,
         map_yaml_path,
         test_map_yaml_path,
@@ -28,6 +31,9 @@ class Runner:
         self._num_episodes = num_episodes
         self._train_episode_timeout = train_episode_timeout
         self._test_episode_timeout = test_episode_timeout
+
+        self._pre_episode_planning_steps = 20
+        self._post_episode_planning_steps = 20
 
         _train_env = key_door_env.KeyDoorEnv(
             map_ascii_path=map_path,
@@ -53,6 +59,34 @@ class Runner:
             beta=self._beta,
             initialisation_strategy=initialisation_strategy,
         )
+
+        # self._agent = dyna_learner.DynaLearner(
+        #     action_space=self._train_env.action_space,
+        #     state_space=self._train_env.state_space,
+        #     learning_rate=self._learning_rate,
+        #     transition_learning_rate=0.1,
+        #     gamma=self._gamma,
+        #     beta=self._beta,
+        #     initialisation_strategy=initialisation_strategy,
+        # )
+        # self._populate_transition_matrix()
+
+    def _populate_transition_matrix(self):
+        dummy_env = copy.deepcopy(self._train_env)
+        dummy_env.reset_environment(train=True)
+
+        for state in dummy_env.state_space:
+            for action in dummy_env.action_space:
+                dummy_env._agent_position = state
+                _, new_state = dummy_env.step(action)
+                self._agent.increment_transition_matrix(state, new_state)
+                self._agent.add_to_replay_buffer(
+                    state, action, 0, new_state, self._train_env.active
+                )
+
+        self._agent.normalise_transition_matrix()
+
+        # TODO: transition from reward to start state
 
     def train(self):
         train_episode_returns = []
@@ -121,6 +155,9 @@ class Runner:
             state = new_state
             episode_return += reward
             episode_length += 1
+
+        # for _ in range(self._post_episode_planning_steps):
+        #     self._agent.plan()
 
         return episode_return, episode_length
 
