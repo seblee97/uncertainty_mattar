@@ -1,6 +1,8 @@
 from key_door import key_door_env
 from key_door import visualisation_env
 
+import os
+
 from unc_mattar.agents import q_learner, dyna_learner
 
 import abc
@@ -20,6 +22,7 @@ class BaseRunner(abc.ABC):
         map_path,
         map_yaml_path,
         test_map_yaml_path,
+        exp_path,
     ):
 
         self._learning_rate = learning_rate
@@ -28,6 +31,12 @@ class BaseRunner(abc.ABC):
         self._num_episodes = num_episodes
         self._train_episode_timeout = train_episode_timeout
         self._test_episode_timeout = test_episode_timeout
+
+        self._exp_path = exp_path
+        self._heatmap_path = f"{self._exp_path}/heatmaps/"
+        os.makedirs(self._heatmap_path, exist_ok=True)
+        self._video_path = f"{self._exp_path}/videos/"
+        os.makedirs(self._video_path, exist_ok=True)
 
         self._pre_episode_planning_steps = 20
         self._post_episode_planning_steps = 20
@@ -57,12 +66,12 @@ class BaseRunner(abc.ABC):
 
         for i in range(self._num_episodes):
 
-            if i % 500 == 0:
+            if i % 25 == 0:
                 print(f"Episode {i}")
                 if i != 0:
                     self._train_env.visualise_episode_history(f"train_{i}.mp4")
                     self._test_env.visualise_episode_history(
-                        f"test_{i}.mp4", history="test"
+                        os.path.join(self._video_path, f"test_{i}.mp4"), history="test"
                     )
                     averaged_heatmap = (
                         self._test_env.average_values_over_positional_states(
@@ -74,7 +83,7 @@ class BaseRunner(abc.ABC):
                     )
                     self._test_env.plot_heatmap_over_env(
                         averaged_heatmap,
-                        save_name=f"heatmap_{i}.png",
+                        save_name=os.path.join(self._heatmap_path, f"heatmap_{i}.png"),
                     )
 
             train_episode_return, train_episode_length = self._train_episode()
