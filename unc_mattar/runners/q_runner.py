@@ -16,6 +16,7 @@ class QRunner(base_runner.BaseRunner):
         map_yaml_path,
         test_map_yaml_path,
         initialisation_strategy,
+        exp_path,
     ):
         super().__init__(
             learning_rate,
@@ -27,6 +28,7 @@ class QRunner(base_runner.BaseRunner):
             map_path,
             map_yaml_path,
             test_map_yaml_path,
+            exp_path,
         )
 
         self._agent = q_learner.QLearner(
