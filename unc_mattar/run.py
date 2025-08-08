@@ -1,12 +1,16 @@
 from unc_mattar.runners import q_runner, dyna_runner
 
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-NUM_REPEATS = 30
+import time
+import datetime
+
+NUM_REPEATS = 100
 NUM_EPISODES = 50
 
-LEARNING_RATE = 0.1
+LEARNING_RATE = 1
 TRANSITION_LEARNING_RATE = 0.9
 BETA = 5.0
 GAMMA = 0.9
@@ -14,14 +18,19 @@ TRAIN_EPISODE_TIMEOUT = 100000
 TEST_EPISODE_TIMEOUT = 100000
 PRE_EPISODE_PLANNING_STEPS = 20
 POST_EPISODE_PLANNING_STEPS = 20
-MAP_PATH = "maze.txt"
-MAP_YAML_PATH = "maze.yaml"
-TEST_MAP_YAML_PATH = "test_maze.yaml"
+MAP_PATH = "maps/maze.txt"
+MAP_YAML_PATH = "maps/maze.yaml"
+TEST_MAP_YAML_PATH = "maps/test_maze.yaml"
 INITIALISATION_STRATEGY = {
     "zeros": None
 }  # {"random_normal": {"mean": 2, "variance": 0.1}}
 
 RUNNER = "q"
+
+raw_datetime = datetime.datetime.fromtimestamp(time.time())
+exp_path = os.path.join("results", raw_datetime.strftime("%Y-%m-%d-%H-%M-%S"))
+
+os.makedirs(exp_path, exist_ok=True)
 
 
 def single_run():
@@ -40,6 +49,7 @@ def single_run():
             map_yaml_path=MAP_YAML_PATH,
             test_map_yaml_path=TEST_MAP_YAML_PATH,
             initialisation_strategy=INITIALISATION_STRATEGY,
+            exp_path=exp_path,
         )
     elif RUNNER == "q":
         runner = q_runner.QRunner(
@@ -53,6 +63,7 @@ def single_run():
             map_yaml_path=MAP_YAML_PATH,
             test_map_yaml_path=TEST_MAP_YAML_PATH,
             initialisation_strategy=INITIALISATION_STRATEGY,
+            exp_path=exp_path,
         )
 
     return runner.train()
@@ -62,16 +73,16 @@ res = np.array([single_run() for _ in range(NUM_REPEATS)])
 
 fig = plt.figure()
 plt.plot(np.mean(res[:, 0], axis=0))
-fig.savefig("train_returns.png")
+fig.savefig(os.path.join(exp_path, "train_returns.png"))
 
 fig = plt.figure()
 plt.plot(np.mean(res[:, 1], axis=0))
-fig.savefig("train_lengths.png")
+fig.savefig(os.path.join(exp_path, "train_lengths.png"))
 
 fig = plt.figure()
 plt.plot(np.mean(res[:, 2], axis=0))
-fig.savefig("test_returns.png")
+fig.savefig(os.path.join(exp_path, "test_returns.png"))
 
 fig = plt.figure()
 plt.plot(np.mean(res[:, 3], axis=0))
-fig.savefig("test_lengths.png")
+fig.savefig(os.path.join(exp_path, "test_lengths.png"))
