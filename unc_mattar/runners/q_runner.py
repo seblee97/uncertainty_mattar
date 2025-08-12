@@ -1,35 +1,18 @@
 from unc_mattar.runners import base_runner
 from unc_mattar.agents import q_learner
 
+from unc_mattar import constants, experiments
+
 
 class QRunner(base_runner.BaseRunner):
 
     def __init__(
         self,
-        learning_rate,
-        beta,
-        gamma,
-        num_episodes,
-        train_episode_timeout,
-        test_episode_timeout,
-        map_path,
-        map_yaml_path,
-        test_map_yaml_path,
-        initialisation_strategy,
-        exp_path,
+        config: experiments.config.Config,
+        unique_id: str = "",
     ):
-        super().__init__(
-            learning_rate,
-            beta,
-            gamma,
-            num_episodes,
-            train_episode_timeout,
-            test_episode_timeout,
-            map_path,
-            map_yaml_path,
-            test_map_yaml_path,
-            exp_path,
-        )
+
+        super().__init__(config=config, unique_id=unique_id)
 
         self._agent = q_learner.QLearner(
             action_space=self._train_env.action_space,
@@ -37,7 +20,7 @@ class QRunner(base_runner.BaseRunner):
             learning_rate=self._learning_rate,
             gamma=self._gamma,
             beta=self._beta,
-            initialisation_strategy=initialisation_strategy,
+            initialisation_strategy=self._initialisation_strategy,
         )
 
     def _train_episode(self):
