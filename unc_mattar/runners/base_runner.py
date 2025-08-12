@@ -3,6 +3,7 @@ from key_door import visualisation_env
 
 import os
 
+from unc_mattar import constants
 from unc_mattar.agents import q_learner, dyna_learner
 
 import abc
@@ -13,45 +14,48 @@ class BaseRunner(abc.ABC):
 
     def __init__(
         self,
-        learning_rate,
-        beta,
-        gamma,
-        num_episodes,
-        train_episode_timeout,
-        test_episode_timeout,
-        map_path,
-        map_yaml_path,
-        test_map_yaml_path,
-        exp_path,
+        config,
+        unique_id: str = "",
     ):
 
-        self._learning_rate = learning_rate
-        self._beta = beta
-        self._gamma = gamma
-        self._num_episodes = num_episodes
-        self._train_episode_timeout = train_episode_timeout
-        self._test_episode_timeout = test_episode_timeout
+        self._learning_rate = config.learning_rate
+        self._beta = config.beta
+        self._gamma = config.gamma
+        self._num_episodes = config.num_episodes
+        self._train_episode_timeout = config.train_episode_timeout
+        self._test_episode_timeout = config.test_episode_timeout
 
-        self._exp_path = exp_path
-        self._heatmap_path = f"{self._exp_path}/heatmaps/"
+        if config.initialisation_strategy == constants.RANDOM_NORMAL:
+            self._initialisation_strategy = {
+                "random_normal": {"mean": 0, "variance": 1},
+            }
+        elif config.initialisation_strategy == "zeros":
+            self._initialisation_strategy = {"zeros"}
+        else:
+            raise ValueError(
+                f"Initialisation strategy {config.initialisation_strategy} not recognised."
+            )
+
+        self._checkpoint_path = config.checkpoint_path
+        self._heatmap_path = os.path.join(self._checkpoint_path, constants.HEATMAPS)
         os.makedirs(self._heatmap_path, exist_ok=True)
-        self._video_path = f"{self._exp_path}/videos/"
+        self._video_path = os.path.join(self._checkpoint_path, constants.VIDEOS)
         os.makedirs(self._video_path, exist_ok=True)
 
-        self._pre_episode_planning_steps = 20
-        self._post_episode_planning_steps = 20
+        self._pre_episode_planning_steps = config.pre_episode_planning_steps
+        self._post_episode_planning_steps = config.post_episode_planning_steps
 
         _train_env = key_door_env.KeyDoorEnv(
-            map_ascii_path=map_path,
-            map_yaml_path=map_yaml_path,
+            map_ascii_path=config.map_path,
+            map_yaml_path=config.map_yaml_path,
             representation="agent_position",
             episode_timeout=self._train_episode_timeout,
         )
         self._train_env = visualisation_env.VisualisationEnv(_train_env)
 
         _test_env = key_door_env.KeyDoorEnv(
-            map_ascii_path=map_path,
-            map_yaml_path=test_map_yaml_path,
+            map_ascii_path=config.map_path,
+            map_yaml_path=config.test_map_yaml_path,
             representation="agent_position",
             episode_timeout=self._test_episode_timeout,
         )
@@ -69,7 +73,10 @@ class BaseRunner(abc.ABC):
             if i % 25 == 0:
                 print(f"Episode {i}")
                 if i != 0:
-                    self._train_env.visualise_episode_history(f"train_{i}.mp4")
+                    self._train_env.visualise_episode_history(
+                        os.path.join(self._video_path, f"train_{i}.mp4"),
+                        history="train",
+                    )
                     self._test_env.visualise_episode_history(
                         os.path.join(self._video_path, f"test_{i}.mp4"), history="test"
                     )
