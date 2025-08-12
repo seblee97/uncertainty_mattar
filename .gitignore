@@ -6,3 +6,4 @@ src/
 *.mp4
 *.png
 *__pycache__
+unc_mattar/experiments/results
