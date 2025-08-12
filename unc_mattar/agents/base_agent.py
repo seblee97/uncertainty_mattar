@@ -90,6 +90,10 @@ class BaseAgent(abc.ABC):
             return np.zeros((len(self._state_space), len(self._action_space)))
         elif initialisation_strategy_name == constants.ONES:
             return np.ones((len(self._state_space), len(self._action_space)))
+        else:
+            raise ValueError(
+                f"Initialisation strategy {initialisation_strategy_name} not recognised."
+            )
 
     def select_action(self, state):
         state_id = self._state_id_mapping[state]
