@@ -1,0 +1,33 @@
+seed: 0
+gpu_id: 0 # None for CPU
+
+runner: "q_learning"
+
+
+experiment:
+    num_episodes: 500
+
+    map_path: "../maps/maze.txt"
+    map_yaml_path: "../maps/maze.yaml"
+    test_map_yaml_path: "../maps/test_maze.yaml"
+    
+    train_episode_timeout: 10000
+    test_episode_timeout: 10000
+
+logging:
+    checkpoint_frequency: 1000
+    stdout_frequency: 1000
+
+learning:
+    learning_rate: 1
+    transition_learning_rate: 0.9
+    beta: 5.0
+    gamma: 0.9 
+    pre_episode_planning_steps: 20
+    post_episode_planning_steps: 20
+
+    initialisation_strategy: "random_normal" # "zeros" or "random"
+
+    random_initialisation:
+        mean: 0.0
+        variance: 0.1
