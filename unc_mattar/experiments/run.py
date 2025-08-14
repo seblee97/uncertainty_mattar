@@ -6,7 +6,7 @@ from run_modes import cluster_run, parallel_run, serial_run, single_run, utils
 
 from unc_mattar import constants, runners
 from unc_mattar.experiments import config
-from unc_mattar.runners import base_runner, q_runner, dyna_runner
+from unc_mattar.runners import base_runner, q_runner, dyna_runner, unified_runner
 
 MAIN_FILE_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -61,17 +61,22 @@ if __name__ == "__main__":
 
     runners_module_path = os.path.dirname(os.path.abspath(runners.__file__))
 
-    if config.runner == constants.Q_LEARNING:
-        runner_module_name = "q_runner"
-        runner_module_path = os.path.join(runners_module_path, "q_runner.py")
-        runner_class = q_runner.QRunner
-        runner_class_name = "QRunner"
+    # if config.runner == constants.Q_LEARNING:
+    #     runner_module_name = "q_runner"
+    #     runner_module_path = os.path.join(runners_module_path, "q_runner.py")
+    #     runner_class = q_runner.QRunner
+    #     runner_class_name = "QRunner"
 
-    elif config.runner == constants.DYNA:
-        runner_module_name = "dyna_runner"
-        runner_module_path = os.path.join(runners_module_path, "dyna_runner.py")
-        runner_class = dyna_runner.DynaRunner
-        runner_class_name = "DynaRunner"
+    # elif config.runner in [constants.DYNA, constants.EVB]:
+    #     runner_module_name = "dyna_runner"
+    #     runner_module_path = os.path.join(runners_module_path, "dyna_runner.py")
+    #     runner_class = dyna_runner.DynaRunner
+    #     runner_class_name = "DynaRunner"
+
+    runner_module_name = "unified_runner"
+    runner_module_path = os.path.join(runners_module_path, "unified_runner.py")
+    runner_class = unified_runner.Runner
+    runner_class_name = "Runner"
 
     # runner_class_name = "BaseRunner"
     # runner_module_name = "base_runner"
