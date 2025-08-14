@@ -1,5 +1,5 @@
 from unc_mattar.runners import base_runner
-from unc_mattar.agents import dyna_learner
+from unc_mattar.agents import random_dyna_learner, evb_dyna_learner
 
 from unc_mattar import constants, experiments
 
@@ -20,16 +20,35 @@ class DynaRunner(base_runner.BaseRunner):
 
         self._pre_episode_planning_steps = config.pre_episode_planning_steps
         self._post_episode_planning_steps = config.post_episode_planning_steps
+        self._k_additional_planning_steps = config.k_additional_planning_steps
 
-        self._agent = dyna_learner.DynaLearner(
-            action_space=self._train_env.action_space,
-            state_space=self._train_env.state_space,
-            learning_rate=self._learning_rate,
-            transition_learning_rate=self._transition_learning_rate,
-            gamma=self._gamma,
-            beta=self._beta,
-            initialisation_strategy=self._initialisation_strategy,
-        )
+        print(config.runner)
+
+        if config.runner == constants.DYNA:
+            self._agent = random_dyna_learner.RandomDynaLearner(
+                action_space=self._train_env.action_space,
+                state_space=self._train_env.state_space,
+                learning_rate=self._learning_rate,
+                transition_learning_rate=self._transition_learning_rate,
+                gamma=self._gamma,
+                beta=self._beta,
+                initialisation_strategy=self._initialisation_strategy,
+            )
+        elif config.runner == constants.EVB:
+            self._agent = evb_dyna_learner.EVBDynaLearner(
+                action_space=self._train_env.action_space,
+                state_space=self._train_env.state_space,
+                learning_rate=self._learning_rate,
+                transition_learning_rate=self._transition_learning_rate,
+                gamma=self._gamma,
+                beta=self._beta,
+                initialisation_strategy=self._initialisation_strategy,
+            )
+        else:
+            raise ValueError(
+                f"Runner {config.runner} not recognised. " "Please use 'dyna' or 'evb'."
+            )
+
         self._populate_transition_matrix()
 
     def _populate_transition_matrix(self):
@@ -74,6 +93,9 @@ class DynaRunner(base_runner.BaseRunner):
             state = new_state
             episode_return += reward
             episode_length += 1
+
+            for _ in range(self._k_additional_planning_steps):
+                self._agent.plan()
 
         for _ in range(self._post_episode_planning_steps):
             self._agent.plan()
