@@ -8,7 +8,7 @@ import os
 from typing import List
 
 from unc_mattar import constants
-from unc_mattar.agents import q_learner, dyna_learner
+from unc_mattar.agents import q_learner, base_dyna_learner
 
 import abc
 import numpy as np
