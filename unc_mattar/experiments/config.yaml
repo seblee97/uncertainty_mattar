@@ -15,16 +15,17 @@ experiment:
     test_episode_timeout: 10000
 
 logging:
-    checkpoint_frequency: 1000
+    checkpoint_frequency: 25
     stdout_frequency: 1000
 
 learning:
-    learning_rate: 1
-    transition_learning_rate: 0.9
+    learning_rate: 0.1
+    transition_learning_rate: 1
     beta: 5.0
     gamma: 0.9 
-    pre_episode_planning_steps: 20
-    post_episode_planning_steps: 20
+    pre_episode_planning_steps: 1
+    post_episode_planning_steps: 1
+    k_additional_planning_steps: 0
 
     initialisation_strategy: "random_normal" # "zeros" or "random"
 
