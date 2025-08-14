@@ -1,11 +1,12 @@
 from unc_mattar.agents import base_agent
 
 import numpy as np
+import abc
 
 from typing import Dict, List, Tuple
 
 
-class DynaLearner(base_agent.BaseAgent):
+class DynaLearner(base_agent.BaseAgent, abc.ABC):
 
     def __init__(
         self,
@@ -62,11 +63,9 @@ class DynaLearner(base_agent.BaseAgent):
         )
         self._transition_matrix[state_id] = updated_transition_vector
 
+    @abc.abstractmethod
     def plan(self):
-        tranisition_sample = self._replay_buffer[
-            np.random.choice(range(len(self._replay_buffer)))
-        ]
-        self._step(*tranisition_sample)
+        pass
 
     def step(
         self,
@@ -83,9 +82,9 @@ class DynaLearner(base_agent.BaseAgent):
         self._step_transition_matrix(state_id, new_state_id)
         self._replay_buffer.append((state_id, action, reward, new_state_id, active))
 
-        self._step(state_id, action, reward, new_state_id, active)
+        self._step(state_id, action, reward, new_state_id, active, self._learning_rate)
 
-    def _step(self, state_id, action, reward, new_state_id, active):
+    def _step(self, state_id, action, reward, new_state_id, active, learning_rate):
         if active:
             discount = self._gamma
         else:
@@ -94,7 +93,7 @@ class DynaLearner(base_agent.BaseAgent):
         initial_value = self._state_action_values[state_id][action]
         new_sate_values = self._state_action_values[new_state_id]
 
-        updated_value = initial_value + self._learning_rate * (
+        updated_value = initial_value + learning_rate * (
             reward + discount * np.max(new_sate_values) - initial_value
         )
         self._state_action_values[state_id][action] = updated_value
