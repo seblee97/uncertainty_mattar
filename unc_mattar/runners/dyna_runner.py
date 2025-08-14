@@ -1,6 +1,8 @@
 from unc_mattar.runners import base_runner
 from unc_mattar.agents import dyna_learner
 
+from unc_mattar import constants, experiments
+
 import copy
 
 
@@ -8,31 +10,16 @@ class DynaRunner(base_runner.BaseRunner):
 
     def __init__(
         self,
-        learning_rate,
-        transition_learning_rate,
-        beta,
-        gamma,
-        num_episodes,
-        train_episode_timeout,
-        test_episode_timeout,
-        pre_episode_planning_steps,
-        post_episode_planning_steps,
-        map_path,
-        map_yaml_path,
-        test_map_yaml_path,
-        initialisation_strategy,
+        config: experiments.config.Config,
+        unique_id: str = "",
     ):
-        super().__init__(
-            learning_rate,
-            beta,
-            gamma,
-            num_episodes,
-            train_episode_timeout,
-            test_episode_timeout,
-            map_path,
-            map_yaml_path,
-            test_map_yaml_path,
-        )
+
+        super().__init__(config=config, unique_id=unique_id)
+
+        self._transition_learning_rate = config.transition_learning_rate
+
+        self._pre_episode_planning_steps = config.pre_episode_planning_steps
+        self._post_episode_planning_steps = config.post_episode_planning_steps
 
         self._agent = dyna_learner.DynaLearner(
             action_space=self._train_env.action_space,
@@ -41,14 +28,9 @@ class DynaRunner(base_runner.BaseRunner):
             transition_learning_rate=self._transition_learning_rate,
             gamma=self._gamma,
             beta=self._beta,
-            initialisation_strategy=initialisation_strategy,
+            initialisation_strategy=self._initialisation_strategy,
         )
         self._populate_transition_matrix()
-
-        self._pre_episode_planning_steps = pre_episode_planning_steps
-        self._post_episode_planning_steps = post_episode_planning_steps
-
-        self._transition_learning_rate = transition_learning_rate
 
     def _populate_transition_matrix(self):
         dummy_env = copy.deepcopy(self._train_env)
