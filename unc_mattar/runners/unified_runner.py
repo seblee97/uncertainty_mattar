@@ -8,7 +8,7 @@ import copy
 
 from typing import List
 
-from unc_mattar import constants
+from unc_mattar import constants, utils
 from unc_mattar.agents import random_dyna_learner, evb_dyna_learner
 
 import abc
@@ -47,6 +47,7 @@ class Runner(base_runner.BaseRunner):
 
         self._populate_transition_matrix()
 
+    @utils.timer
     def _setup_logging(self, config):
         self._checkpoint_frequency = config.checkpoint_frequency
         self._data_columns = self._setup_data_columns()
@@ -57,6 +58,7 @@ class Runner(base_runner.BaseRunner):
         self._video_path = os.path.join(self._checkpoint_path, constants.VIDEOS)
         os.makedirs(self._video_path, exist_ok=True)
 
+    @utils.timer
     def _setup_initialisation(self, config):
         if config.initialisation_strategy == constants.RANDOM_NORMAL:
             initialisation_strategy = {
@@ -70,6 +72,7 @@ class Runner(base_runner.BaseRunner):
             )
         return initialisation_strategy
 
+    @utils.timer
     def _setup_envs(self, config):
         _train_env = key_door_env.KeyDoorEnv(
             map_ascii_path=config.map_path,
@@ -89,6 +92,7 @@ class Runner(base_runner.BaseRunner):
 
         return _train_env, _test_env
 
+    @utils.timer
     def _setup_agent(self, config):
         if config.runner == constants.DYNA:
             agent = random_dyna_learner.RandomDynaLearner(
@@ -116,6 +120,7 @@ class Runner(base_runner.BaseRunner):
             )
         return agent
 
+    @utils.timer
     def _populate_transition_matrix(self):
         dummy_env = copy.deepcopy(self._train_env)
 
