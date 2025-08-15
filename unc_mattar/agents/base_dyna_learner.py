@@ -63,6 +63,11 @@ class DynaLearner(base_agent.BaseAgent, abc.ABC):
         )
         self._transition_matrix[state_id] = updated_transition_vector
 
+    def _get_successor_matrix(self):
+        return np.linalg.inv(
+            np.eye(len(self._state_space)) - self._gamma * self._transition_matrix
+        )
+
     @abc.abstractmethod
     def plan(self):
         pass
