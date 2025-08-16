@@ -71,6 +71,10 @@ class ConfigTemplate:
                 types=[float, int],
             ),
             config_field.Field(
+                name=constants.PLANNING_LEARNING_RATE,
+                types=[float, int],
+            ),
+            config_field.Field(
                 name=constants.BETA,
                 types=[int, float],
                 requirements=[lambda x: x > 0],
@@ -114,7 +118,9 @@ class ConfigTemplate:
             config_field.Field(
                 name=constants.RUNNER,
                 types=[str],
-                requirements=[lambda x: x in [constants.DYNA, constants.Q_LEARNING]],
+                requirements=[
+                    lambda x: x in [constants.DYNA, constants.Q_LEARNING, constants.EVB]
+                ],
             ),
         ],
         nested_templates=[
