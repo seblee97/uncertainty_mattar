@@ -1,7 +1,7 @@
 seed: 0
 gpu_id: 0 # None for CPU
 
-runner: "q_learning"
+runner: "evb" 
 
 
 experiment:
@@ -21,6 +21,7 @@ logging:
 learning:
     learning_rate: 0.1
     transition_learning_rate: 1
+    planning_learning_rate: 1.0
     beta: 5.0
     gamma: 0.9 
     pre_episode_planning_steps: 1
