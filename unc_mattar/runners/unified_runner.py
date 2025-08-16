@@ -34,6 +34,7 @@ class Runner(base_runner.BaseRunner):
         self._test_episode_timeout = config.test_episode_timeout
 
         self._transition_learning_rate = config.transition_learning_rate
+        self._planning_learning_rate = config.planning_learning_rate
         self._pre_episode_planning_steps = config.pre_episode_planning_steps
         self._post_episode_planning_steps = config.post_episode_planning_steps
         self._k_additional_planning_steps = config.k_additional_planning_steps
@@ -100,6 +101,7 @@ class Runner(base_runner.BaseRunner):
                 state_space=self._train_env.state_space,
                 learning_rate=self._learning_rate,
                 transition_learning_rate=self._transition_learning_rate,
+                planning_learning_rate=self._planning_learning_rate,
                 gamma=self._gamma,
                 beta=self._beta,
                 initialisation_strategy=self._initialisation_strategy,
@@ -110,6 +112,7 @@ class Runner(base_runner.BaseRunner):
                 state_space=self._train_env.state_space,
                 learning_rate=self._learning_rate,
                 transition_learning_rate=self._transition_learning_rate,
+                planning_learning_rate=self._planning_learning_rate,
                 gamma=self._gamma,
                 beta=self._beta,
                 initialisation_strategy=self._initialisation_strategy,
@@ -220,7 +223,7 @@ class Runner(base_runner.BaseRunner):
         state = self._train_env.reset_environment(train=True)
 
         for _ in range(self._pre_episode_planning_steps):
-            self._agent.plan()
+            self._agent.plan(current_state=state)
 
         while self._train_env.active:
 
@@ -240,10 +243,10 @@ class Runner(base_runner.BaseRunner):
             episode_length += 1
 
             for _ in range(self._k_additional_planning_steps):
-                self._agent.plan()
+                self._agent.plan(current_state=state)
 
         for _ in range(self._post_episode_planning_steps):
-            self._agent.plan()
+            self._agent.plan(current_state=state)
 
         return episode_return, episode_length
 
