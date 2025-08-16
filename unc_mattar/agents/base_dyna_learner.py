@@ -15,6 +15,7 @@ class DynaLearner(base_agent.BaseAgent, abc.ABC):
         # positional_state_space,
         learning_rate,
         transition_learning_rate,
+        planning_learning_rate,
         gamma,
         beta,
         initialisation_strategy,
@@ -29,6 +30,7 @@ class DynaLearner(base_agent.BaseAgent, abc.ABC):
         )
 
         self._transition_lr = transition_learning_rate
+        self._planning_lr = planning_learning_rate
         # self._positional_state_space = positional_state_space
 
         self._transition_matrix = np.zeros(
@@ -69,7 +71,7 @@ class DynaLearner(base_agent.BaseAgent, abc.ABC):
         )
 
     @abc.abstractmethod
-    def plan(self):
+    def plan(self, current_state):
         pass
 
     def step(
