@@ -5,6 +5,8 @@ import abc
 
 from typing import Dict, List, Tuple
 
+from collections import deque
+
 
 class DynaLearner(base_agent.BaseAgent, abc.ABC):
 
@@ -19,6 +21,7 @@ class DynaLearner(base_agent.BaseAgent, abc.ABC):
         gamma,
         beta,
         initialisation_strategy,
+        max_buffer_size,
     ):
         super().__init__(
             action_space,
@@ -37,7 +40,13 @@ class DynaLearner(base_agent.BaseAgent, abc.ABC):
             (len(self._state_space), len(self._state_space))
         )
 
-        self._replay_buffer = []
+        self._replay_buffer = self._setup_replay_buffer(max_buffer_size)
+
+    def _setup_replay_buffer(self, max_buffer_size):
+        if max_buffer_size is None:
+            return []
+        else:
+            return deque(maxlen=max_buffer_size)
 
     def add_to_replay_buffer(self, state, action, reward, new_state, active):
         state_id = self._state_id_mapping[state]
