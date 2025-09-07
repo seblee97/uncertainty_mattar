@@ -26,7 +26,9 @@ learning:
     gamma: 0.9 
     pre_episode_planning_steps: 1
     post_episode_planning_steps: 1
-    k_additional_planning_steps: 0
+    k_additional_planning_steps: 2
+
+    max_buffer_size: 2000
 
     initialisation_strategy: "random_normal" # "zeros" or "random"
 
