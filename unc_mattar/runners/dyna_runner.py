@@ -22,6 +22,8 @@ class DynaRunner(base_runner.BaseRunner):
         self._post_episode_planning_steps = config.post_episode_planning_steps
         self._k_additional_planning_steps = config.k_additional_planning_steps
 
+        self._max_buffer_size = config.max_buffer_size
+
         print(config.runner)
 
         if config.runner == constants.DYNA:
@@ -33,6 +35,7 @@ class DynaRunner(base_runner.BaseRunner):
                 gamma=self._gamma,
                 beta=self._beta,
                 initialisation_strategy=self._initialisation_strategy,
+                max_buffer_size=self._max_buffer_size,
             )
         elif config.runner == constants.EVB:
             self._agent = evb_dyna_learner.EVBDynaLearner(
@@ -43,6 +46,7 @@ class DynaRunner(base_runner.BaseRunner):
                 gamma=self._gamma,
                 beta=self._beta,
                 initialisation_strategy=self._initialisation_strategy,
+                max_buffer_size=self._max_buffer_size,
             )
         else:
             raise ValueError(
