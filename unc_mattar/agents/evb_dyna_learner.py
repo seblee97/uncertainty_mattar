@@ -10,33 +10,32 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
         super().__init__(*args, **kwargs)
 
     def plan(self, current_state):
+
+        # Convert replay buffer to numpy arrays for vectorized operations
+        replay_arr = np.array(self._replay_buffer, dtype=object)
+
         # Implement the planning step using the EVB criterion approach
         sr_matrix = self._get_successor_matrix()
         current_state_id = self._state_id_mapping[current_state]
         sr_row = sr_matrix[current_state_id]
-        needs = [sr_row[exp[0]] for exp in self._replay_buffer]
 
-        gains = []
+        state_ids = replay_arr[:, 0].astype(int)
+        needs = sr_row[state_ids]
 
-        for exp in self._replay_buffer:
-            state_id, action, reward, new_state_id, active = exp
+        actions = replay_arr[:, 1].astype(int)
+        rewards = replay_arr[:, 2].astype(float)
+        new_state_ids = replay_arr[:, 3].astype(int)
+        actives = replay_arr[:, 4].astype(bool)
 
-            if active:
-                discount = self._gamma
-            else:
-                discount = 0
+        discounts = np.where(actives, self._gamma, 0.0)
+        q_current = self._state_action_values[state_ids, actions]
+        q_next_max = np.max(self._state_action_values[new_state_ids], axis=1)
+        q_target = rewards + discounts * q_next_max
+        q_updated = q_current + self._learning_rate * (q_target - q_current)
+        gains = np.abs(q_updated - q_current)
 
-            q_current = self._state_action_values[state_id][action]
-            q_target = reward + discount * np.max(
-                self._state_action_values[new_state_id]
-            )
-            q_updated = q_current + self._learning_rate * (q_target - q_current)
-            # unclear whether to use planning or regular lr here
-            # I assume its not even distinct in the original case.
+        evbs = gains * needs
 
-            gain = abs(q_updated - q_current)
-            gains.append(gain)
-        evbs = [g * n for g, n in zip(gains, needs)]
-        transition_sample = self._replay_buffer[np.argmax(evbs)]
-        transition_sample = transition_sample + (self._planning_lr,)
+        idx = np.argmax(evbs)
+        transition_sample = tuple(replay_arr[idx]) + (self._planning_lr,)
         self._step(*transition_sample)
