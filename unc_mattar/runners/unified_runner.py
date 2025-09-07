@@ -39,6 +39,8 @@ class Runner(base_runner.BaseRunner):
         self._post_episode_planning_steps = config.post_episode_planning_steps
         self._k_additional_planning_steps = config.k_additional_planning_steps
 
+        self._max_buffer_size = config.max_buffer_size
+
         self._initialisation_strategy = self._setup_initialisation(config)
         self._setup_logging(config)
 
@@ -105,6 +107,7 @@ class Runner(base_runner.BaseRunner):
                 gamma=self._gamma,
                 beta=self._beta,
                 initialisation_strategy=self._initialisation_strategy,
+                max_buffer_size=self._max_buffer_size,
             )
         elif config.runner == constants.EVB:
             agent = evb_dyna_learner.EVBDynaLearner(
@@ -116,6 +119,7 @@ class Runner(base_runner.BaseRunner):
                 gamma=self._gamma,
                 beta=self._beta,
                 initialisation_strategy=self._initialisation_strategy,
+                max_buffer_size=self._max_buffer_size,
             )
         else:
             raise ValueError(
