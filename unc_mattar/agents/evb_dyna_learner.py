@@ -46,12 +46,8 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
         new_q = old_q.copy()
         new_q[np.arange(len(q_updated)), actions] = q_updated
 
-        old_policy = np.exp(self._beta * old_q) / np.repeat(
-            old_softmax_denominator[:, None], 4, axis=1
-        )
-        new_policy = np.exp(self._beta * new_q) / np.repeat(
-            new_softmax_denominator[:, None], 4, axis=1
-        )
+        old_policy = np.exp(self._beta * old_q) / old_softmax_denominator[:, None]
+        new_policy = np.exp(self._beta * new_q) / new_softmax_denominator[:, None]
 
         v_new = np.sum(new_policy * new_q, axis=1)
         v_old = np.sum(old_policy * old_q, axis=1)
