@@ -32,7 +32,30 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
         q_next_max = np.max(self._state_action_values[new_state_ids], axis=1)
         q_target = rewards + discounts * q_next_max
         q_updated = q_current + self._learning_rate * (q_target - q_current)
-        gains = np.abs(q_updated - q_current)
+
+        old_softmax_denominator = np.sum(
+            np.exp(self._beta * self._state_action_values[state_ids]), axis=1
+        )
+        new_softmax_denominator = (
+            old_softmax_denominator
+            - np.exp(self._beta * q_current)
+            + np.exp(self._beta * q_updated)
+        )
+
+        old_q = self._state_action_values[state_ids]
+        new_q = old_q.copy()
+        new_q[np.arange(len(q_updated)), actions] = q_updated
+
+        old_policy = np.exp(self._beta * old_q) / np.repeat(
+            old_softmax_denominator[:, None], 4, axis=1
+        )
+        new_policy = np.exp(self._beta * new_q) / np.repeat(
+            new_softmax_denominator[:, None], 4, axis=1
+        )
+
+        v_new = np.sum(new_policy * new_q, axis=1)
+        v_old = np.sum(old_policy * old_q, axis=1)
+        gains = v_new - v_old
 
         evbs = gains * needs
 
