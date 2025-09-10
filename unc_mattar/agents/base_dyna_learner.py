@@ -6,6 +6,7 @@ import abc
 from typing import Dict, List, Tuple
 
 from collections import deque
+from unc_mattar.utils import ReplayBuffer
 
 
 class DynaLearner(base_agent.BaseAgent, abc.ABC):
@@ -40,19 +41,13 @@ class DynaLearner(base_agent.BaseAgent, abc.ABC):
             (len(self._state_space), len(self._state_space))
         )
 
-        self._replay_buffer = self._setup_replay_buffer(max_buffer_size)
-
-    def _setup_replay_buffer(self, max_buffer_size):
-        if max_buffer_size is None:
-            return []
-        else:
-            return deque(maxlen=max_buffer_size)
+        self._replay_buffer = ReplayBuffer(max_buffer_size)
 
     def add_to_replay_buffer(self, state, action, reward, new_state, active):
         state_id = self._state_id_mapping[state]
         new_state_id = self._state_id_mapping[new_state]
 
-        self._replay_buffer.append((state_id, action, reward, new_state_id, active))
+        self._replay_buffer.add(state_id, action, reward, new_state_id, active)
 
     def increment_transition_matrix(self, state, new_state):
         state_id = self._state_id_mapping[state]
@@ -96,7 +91,7 @@ class DynaLearner(base_agent.BaseAgent, abc.ABC):
         new_state_id = self._state_id_mapping[new_state]
 
         self._step_transition_matrix(state_id, new_state_id)
-        self._replay_buffer.append((state_id, action, reward, new_state_id, active))
+        self._replay_buffer.add(state_id, action, reward, new_state_id, active)
 
         self._step(state_id, action, reward, new_state_id, active, self._learning_rate)
 
