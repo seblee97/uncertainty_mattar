@@ -11,21 +11,20 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
 
     def plan(self, current_state):
 
-        # Convert replay buffer to numpy arrays for vectorized operations
-        replay_arr = np.array(self._replay_buffer, dtype=object)
+        buffer = self._replay_buffer.buffer
+
+        state_ids = buffer[0]
+        actions = buffer[1]
+        rewards = buffer[2]
+        new_state_ids = buffer[3]
+        actives = buffer[4]
 
         # SR matrix for need term
         sr_matrix = self._get_successor_matrix()
         current_state_id = self._state_id_mapping[current_state]
         sr_row = sr_matrix[current_state_id]
 
-        state_ids = replay_arr[:, 0].astype(int)
         needs = sr_row[state_ids]
-
-        actions = replay_arr[:, 1].astype(int)
-        rewards = replay_arr[:, 2].astype(float)
-        new_state_ids = replay_arr[:, 3].astype(int)
-        actives = replay_arr[:, 4].astype(bool)
 
         # Hypothetical Q-learning update for all transitions in buffer
         discounts = np.where(actives, self._gamma, 0.0)
@@ -58,5 +57,24 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
         evbs = gains * needs
 
         idx = np.argmax(evbs)
-        transition_sample = tuple(replay_arr[idx]) + (self._planning_lr,)
+
+        # n-step chains
+        # next_state_ids = replay_arr[:, 3].astype(int)
+        # optimal_actions_in_next_states = np.argmax(
+        #     self._state_action_values[next_state_ids], axis=1
+        # )
+        # chains = replay_arr[:, :3]
+        # steps = 1
+
+        # while steps < self._max_chain:
+        #     pass
+
+        transition_sample = (
+            state_ids[idx],
+            actions[idx],
+            rewards[idx],
+            new_state_ids[idx],
+            actives[idx],
+            self._planning_lr,
+        )
         self._step(*transition_sample)
