@@ -60,6 +60,12 @@ class ReplayBuffer:
             self._actives[index],
         )
 
+    def get_predecessors(self, state_id: int) -> List[int]:
+        if state_id in self._predecessors:
+            return self._predecessors[state_id]
+        else:
+            return []
+
     @property
     def buffer(self):
         size = len(self)
