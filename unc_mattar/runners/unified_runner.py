@@ -120,6 +120,8 @@ class Runner(base_runner.BaseRunner):
                 beta=self._beta,
                 initialisation_strategy=self._initialisation_strategy,
                 max_buffer_size=self._max_buffer_size,
+                top_k=config.top_k,
+                max_chain=config.max_chain,
             )
         else:
             raise ValueError(
