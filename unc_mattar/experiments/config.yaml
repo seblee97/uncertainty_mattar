@@ -3,7 +3,6 @@ gpu_id: 0 # None for CPU
 
 runner: "evb" 
 
-
 experiment:
     num_episodes: 500
 
@@ -27,6 +26,8 @@ learning:
     pre_episode_planning_steps: 1
     post_episode_planning_steps: 1
     k_additional_planning_steps: 2
+    top_k: 5
+    max_chain: 20
 
     max_buffer_size: 2000
 

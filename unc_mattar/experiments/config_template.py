@@ -100,6 +100,16 @@ class ConfigTemplate:
                 requirements=[lambda x: x >= 0],
             ),
             config_field.Field(
+                name=constants.TOP_K,
+                types=[int],
+                requirements=[lambda x: x > 0],
+            ),
+            config_field.Field(
+                name=constants.MAX_CHAIN,
+                types=[int],
+                requirements=[lambda x: x > 0],
+            ),
+            config_field.Field(
                 name=constants.MAX_BUFFER_SIZE,
                 types=[int, type(None)],
                 requirements=[lambda x: x is None or x > 0],
