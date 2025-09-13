@@ -10,7 +10,7 @@ experiment:
     map_yaml_path: "../maps/maze.yaml"
     test_map_yaml_path: "../maps/test_maze.yaml"
     
-    train_episode_timeout: 10000
+    train_episode_timeout: 1000
     test_episode_timeout: 10000
 
 logging:
@@ -19,10 +19,11 @@ logging:
 
 learning:
     learning_rate: 0.1
-    transition_learning_rate: 1
-    planning_learning_rate: 1.0
+    transition_learning_rate: 0.9
+    planning_learning_rate: 0.1
     beta: 5.0
-    gamma: 0.9 
+    gamma: 0.9
+    e_lambda: 0.0 # eligibility trace parameter
     pre_episode_planning_steps: 1
     post_episode_planning_steps: 1
     k_additional_planning_steps: 2
