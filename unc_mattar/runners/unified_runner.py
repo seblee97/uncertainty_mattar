@@ -122,6 +122,7 @@ class Runner(base_runner.BaseRunner):
                 max_buffer_size=self._max_buffer_size,
                 top_k=config.top_k,
                 max_chain=config.max_chain,
+                e_lambda=config.e_lambda,
             )
         else:
             raise ValueError(
