@@ -115,6 +115,11 @@ class ConfigTemplate:
                 requirements=[lambda x: x is None or x > 0],
             ),
             config_field.Field(
+                name=constants.E_LAMBDA,
+                types=[float, int],
+                requirements=[lambda x: x >= 0],
+            ),
+            config_field.Field(
                 name=constants.INITIALISATION_STRATEGY,
                 types=[str],
                 requirements=[
