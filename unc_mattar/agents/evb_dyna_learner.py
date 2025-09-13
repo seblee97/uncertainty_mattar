@@ -20,6 +20,7 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
         max_buffer_size,
         top_k,
         max_chain,
+        e_lambda,
     ):
         super().__init__(
             action_space=action_space,
@@ -35,6 +36,7 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
 
         self._top_k = top_k
         self._max_chain = max_chain
+        self._lambda = e_lambda
 
     def _get_best_evb_transitions(self, buffer, sr_row):
         """
@@ -177,7 +179,7 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
             # traces: accumulate then decay by gamma (since λ=1)
             e[s_t, a_t] += 1.0
             Q_h += self._learning_rate * delta * e
-            e *= self._gamma
+            e *= self._gamma * self._lambda
 
             # local gain at s_t
             local_gain = np.max(Q_h[s_t]) - value_old
@@ -196,48 +198,48 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
         return episode_evb, accumulated_gain
 
     def _apply_episode_Q1(self, episode_chain):
-        # setup eligibility trace
-        e = np.zeros_like(self._state_action_values)
 
-        accumulated_gain = 0.0
+        if len(episode_chain) >= 2:
+            # setup eligibility trace
+            e = np.zeros_like(self._state_action_values)
 
-        if len(episode_chain) < 2:
-            return 0.0
+            accumulated_gain = 0.0
 
-        T = len(episode_chain) - 1
-        for t in range(T):
-            s_t, a_t, r_t = episode_chain[t]
-            if isinstance(episode_chain[t + 1], (int, np.integer)):
-                s_tp = episode_chain[t + 1]
-            else:
-                s_tp = episode_chain[t + 1][0]
+            T = len(episode_chain) - 1
 
-            value_old = np.max(self._state_action_values[s_t])
+            for t in range(T):
+                s_t, a_t, r_t = episode_chain[t]
+                if isinstance(episode_chain[t + 1], (int, np.integer)):
+                    s_tp = episode_chain[t + 1]
+                else:
+                    s_tp = episode_chain[t + 1][0]
 
-            # TD error with greedy bootstrap (Watkins' Q) and λ=1
-            if t == T - 1:
-                value_tp1 = 0.0
-            else:
-                value_tp1 = np.max(self._state_action_values[s_tp])
-            delta = r_t + self._gamma * value_tp1 - self._state_action_values[s_t, a_t]
+                value_old = np.max(self._state_action_values[s_t])
 
-            # traces: accumulate then decay by gamma (since λ=1)
-            e[s_t, a_t] += 1.0
-            self._state_action_values += self._planning_lr * delta * e
-            e *= self._gamma
+                # TD error with greedy bootstrap (Watkins' Q) and λ=1
+                if t == T - 1:
+                    value_tp1 = 0.0
+                else:
+                    value_tp1 = np.max(self._state_action_values[s_tp])
+                delta = (
+                    r_t + self._gamma * value_tp1 - self._state_action_values[s_t, a_t]
+                )
 
-            # local gain at s_t
-            local_gain = np.max(self._state_action_values[s_t]) - value_old
-            if local_gain > 0:
-                accumulated_gain += local_gain
+                # traces: accumulate then decay by gamma (since λ=1)
+                e[s_t, a_t] += 1.0
+                self._state_action_values += self._planning_lr * delta * e
+                e *= self._gamma * self._lambda
 
-            if t < T - 1:
-                a_tp1 = episode_chain[t + 1][1]
-                if a_tp1 != np.argmax(self._state_action_values[s_tp]):
-                    e[:] = 0.0
-                    break
+                # local gain at s_t
+                local_gain = np.max(self._state_action_values[s_t]) - value_old
+                if local_gain > 0:
+                    accumulated_gain += local_gain
 
-        return accumulated_gain
+                if t < T - 1:
+                    a_tp1 = episode_chain[t + 1][1]
+                    if a_tp1 != np.argmax(self._state_action_values[s_tp]):
+                        e[:] = 0.0
+                        break
 
     def plan(self, current_state):
 
