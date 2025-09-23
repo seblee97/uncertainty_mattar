@@ -85,19 +85,24 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
 
         return idx
 
-    def _get_continuation_chain(self, replay_element):
+    def _get_continuation_chain(self, tail_idx):
         """
         # TODO
         """
-        # n-step chains
-        if replay_element[1] != np.argmax(self._state_action_values[replay_element[0]]):
-            return [replay_element[:3], replay_element[3]]
+        s_tail, a_tail, r_tail, s_k, active_tail = self._replay_buffer.get(tail_idx)
 
-        chain = [replay_element[:3]]
+        chain = [(s_tail, a_tail, r_tail, active_tail)]
+
+        if a_tail != np.argmax(self._state_action_values[s_tail]) or not active_tail:
+            # Return minimal episode: one link + successor state
+            return chain + [s_k]
 
         while len(chain) < self._max_chain:
-            predecessors = self._replay_buffer.get_predecessors(chain[0][0])
+            head_s, head_a, _, head_active = chain[0]
+            if not head_active:  # head successor is terminal; cannot extend further
+                break
 
+            predecessors = self._replay_buffer.get_predecessors(head_s)
             if not predecessors:
                 break
 
@@ -106,19 +111,19 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
             for predecessor_idx in predecessors:
                 predecessor = self._replay_buffer.get(predecessor_idx)
 
-                s_pred, a_pred, r_pred, s_next_pred, _ = predecessor
-
-                if s_next_pred != chain[0][0]:
+                s_pred, a_pred, r_pred, s_next_pred, active_pred = predecessor
+                if s_next_pred != head_s:
                     continue
 
+                # predecessor must be greedy now; head action must still be greedy
                 greedy_a_pred = np.argmax(self._state_action_values[s_pred])
                 if a_pred != greedy_a_pred:
                     continue
-                greedy_a_chain = np.argmax(self._state_action_values[chain[0][0]])
-                if chain[0][1] != greedy_a_chain:
+                greedy_a_chain = np.argmax(self._state_action_values[head_s])
+                if head_a != greedy_a_chain:
                     continue
 
-                link = (s_pred, a_pred, r_pred)
+                link = (s_pred, a_pred, r_pred, active_pred)
                 break
 
             if link is None:
@@ -126,7 +131,7 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
 
             chain.insert(0, link)
 
-        return chain + [replay_element[3]]
+        return chain + [s_k]
 
     def _get_n_step_target(self, trajectory):
         """
@@ -140,10 +145,9 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
         return G
 
     def _score_episode_Q1_evb(self, episode_chain, sr_row):
-        # setup eligibility trace
-        e = np.zeros_like(self._state_action_values)
-
         Q_h = self._state_action_values.copy()
+        # setup eligibility trace
+        e = np.zeros_like(Q_h)
         accumulated_gain = 0.0
 
         if len(episode_chain) < 2:
@@ -157,7 +161,7 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
         T = len(episode_chain) - 1
 
         for t in range(T):
-            s_t, a_t, r_t = episode_chain[t]
+            s_t, a_t, r_t, active_t = episode_chain[t]
             if isinstance(episode_chain[t + 1], (int, np.integer)):
                 s_tp = episode_chain[t + 1]
             else:
@@ -170,12 +174,12 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
             value_old = np.max(Q_h[s_t])
 
             # TD error with greedy bootstrap (Watkins' Q) and λ=1
-            value_tp1 = np.max(Q_h[s_tp])
+            value_tp1 = 0.0 if not active_t else np.max(Q_h[s_tp])
             delta = r_t + self._gamma * value_tp1 - Q_h[s_t, a_t]
 
             # traces: accumulate then decay by gamma (since λ=1)
             e[s_t, a_t] += 1.0
-            Q_h += self._learning_rate * delta * e
+            Q_h += self._planning_lr * delta * e
             e *= self._gamma * self._lambda
 
             # local gain at s_t
@@ -183,6 +187,9 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
             if local_gain > 0:
                 accumulated_gain += local_gain
 
+            if not active_t:
+                e[:] = 0.0
+                break
             if t < T - 1:
                 a_tp1 = episode_chain[t + 1][1]
                 if a_tp1 != np.argmax(Q_h[s_tp]):
@@ -205,7 +212,7 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
             T = len(episode_chain) - 1
 
             for t in range(T):
-                s_t, a_t, r_t = episode_chain[t]
+                s_t, a_t, r_t, active_t = episode_chain[t]
                 if isinstance(episode_chain[t + 1], (int, np.integer)):
                     s_tp = episode_chain[t + 1]
                 else:
@@ -214,7 +221,9 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
                 value_old = np.max(self._state_action_values[s_t])
 
                 # TD error with greedy bootstrap (Watkins' Q) and λ=1
-                value_tp1 = np.max(self._state_action_values[s_tp])
+                value_tp1 = (
+                    0.0 if not active_t else np.max(self._state_action_values[s_tp])
+                )
                 delta = (
                     r_t + self._gamma * value_tp1 - self._state_action_values[s_t, a_t]
                 )
@@ -229,6 +238,9 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
                 if local_gain > 0:
                     accumulated_gain += local_gain
 
+                if not active_t:
+                    e[:] = 0.0
+                    break
                 if t < T - 1:
                     a_tp1 = episode_chain[t + 1][1]
                     if a_tp1 != np.argmax(self._state_action_values[s_tp]):
@@ -248,10 +260,7 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
         idx = self._get_best_evb_transitions(buffer, sr_row)
 
         # use best as seed tail to build n-step chain
-        episode_chains = [
-            self._get_continuation_chain(self._replay_buffer.get(idx_i))
-            for idx_i in idx
-        ]
+        episode_chains = [self._get_continuation_chain(idx_i) for idx_i in idx]
 
         best_evb, best_i, best_gain = -0.0, None, 0.0
         for i, episode_chain in enumerate(episode_chains):
