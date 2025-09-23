@@ -12,7 +12,7 @@ incoming_teleport_positions:
     - [10, 3]
 
 outgoing_teleport_positions:
-    - [1, 1]
+    - [10, 1]
 
 # provide either one set of statistics (used for all rewards)
 # or one set of statistics for each reward
