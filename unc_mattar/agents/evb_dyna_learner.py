@@ -56,7 +56,7 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
         q_current = self._state_action_values[state_ids, actions]
         q_next_max = np.max(self._state_action_values[next_state_ids], axis=1)
         q_target = rewards + discounts * q_next_max
-        q_updated = q_current + self._learning_rate * (q_target - q_current)
+        q_updated = q_current + self._planning_lr * (q_target - q_current)
 
         # Compute gains from hypothetical updates
         old_softmax_denominator = np.sum(
@@ -81,7 +81,7 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
 
         evbs = gains * needs
 
-        idx = np.argsort(evbs)[: self._top_k]
+        idx = np.argsort(evbs)[::-1][: self._top_k]
 
         return idx
 
@@ -91,7 +91,7 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
         """
         # n-step chains
         if replay_element[1] != np.argmax(self._state_action_values[replay_element[0]]):
-            return [replay_element[:3], replay_element[0]]
+            return [replay_element[:3], replay_element[3]]
 
         chain = [replay_element[:3]]
 
@@ -163,17 +163,14 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
             else:
                 s_tp = episode_chain[t + 1][0]
 
-            if a_t != np.argmax(Q_h[s_t]):
-                e[:] = 0.0
-                break
+            # if a_t != np.argmax(Q_h[s_t]):
+            #     e[:] = 0.0
+            #     break
 
             value_old = np.max(Q_h[s_t])
 
             # TD error with greedy bootstrap (Watkins' Q) and λ=1
-            if t == T - 1:
-                value_tp1 = 0.0
-            else:
-                value_tp1 = np.max(Q_h[s_tp])
+            value_tp1 = np.max(Q_h[s_tp])
             delta = r_t + self._gamma * value_tp1 - Q_h[s_t, a_t]
 
             # traces: accumulate then decay by gamma (since λ=1)
@@ -217,10 +214,7 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
                 value_old = np.max(self._state_action_values[s_t])
 
                 # TD error with greedy bootstrap (Watkins' Q) and λ=1
-                if t == T - 1:
-                    value_tp1 = 0.0
-                else:
-                    value_tp1 = np.max(self._state_action_values[s_tp])
+                value_tp1 = np.max(self._state_action_values[s_tp])
                 delta = (
                     r_t + self._gamma * value_tp1 - self._state_action_values[s_t, a_t]
                 )
