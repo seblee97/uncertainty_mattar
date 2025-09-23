@@ -138,10 +138,10 @@ class Runner(base_runner.BaseRunner):
             for action in dummy_env.action_space:
                 dummy_env.reset_environment(train=True)
                 dummy_env._agent_position = state
-                _, new_state = dummy_env.step(action)
+                rew, new_state = dummy_env.step(action)
                 self._agent.increment_transition_matrix(state, new_state)
                 self._agent.add_to_replay_buffer(
-                    state, action, 0, new_state, self._train_env.active
+                    state, action, rew, new_state, dummy_env.active
                 )
 
         self._agent.normalise_transition_matrix()
