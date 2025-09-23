@@ -220,7 +220,7 @@ class Runner(base_runner.BaseRunner):
 
             self._data_index += 1
 
-            if i % self._checkpoint_frequency == 0:
+            if self._data_index == self._checkpoint_frequency:
                 self._checkpoint_data()
 
     def _train_episode(self):
