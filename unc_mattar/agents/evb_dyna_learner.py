@@ -83,7 +83,7 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
 
         idx = np.argsort(evbs)[::-1][: self._top_k]
 
-        return idx
+        return idx, evbs[idx]
 
     def _get_continuation_chain(self, tail_idx):
         """
@@ -257,7 +257,7 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
         buffer = self._replay_buffer.buffer
 
         # 1-step EVB for all transitions in buffer, identify best
-        idx = self._get_best_evb_transitions(buffer, sr_row)
+        idx, evbs = self._get_best_evb_transitions(buffer, sr_row)
 
         # use best as seed tail to build n-step chain
         episode_chains = [self._get_continuation_chain(idx_i) for idx_i in idx]
@@ -277,6 +277,7 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
 
         # apply best n-step update
         self._apply_episode_Q1(episode_chain)
+        self._state_planning_counts[self._id_state_mapping[episode_chain[0][0]]] += 1
 
         return {"applied": True, "evb": best_evb, "gain": best_gain}
 
