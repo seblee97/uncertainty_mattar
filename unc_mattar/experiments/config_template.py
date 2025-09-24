@@ -35,6 +35,11 @@ class ConfigTemplate:
                 requirements=[lambda x: x > 0],
             ),
             config_field.Field(
+                name=constants.VISUALISATION_FREQUENCY,
+                types=[int],
+                requirements=[lambda x: x > 0],
+            ),
+            config_field.Field(
                 name=constants.STDOUT_FREQUENCY,
                 types=[int],
                 requirements=[lambda x: x > 0],
