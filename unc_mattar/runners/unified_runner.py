@@ -53,6 +53,7 @@ class Runner(base_runner.BaseRunner):
     @utils.timer
     def _setup_logging(self, config):
         self._checkpoint_frequency = config.checkpoint_frequency
+        self._visualisation_frequency = config.visualisation_frequency
         self._data_columns = self._setup_data_columns()
         self._log_columns = self._get_data_columns()
 
@@ -179,28 +180,9 @@ class Runner(base_runner.BaseRunner):
 
         for i in range(self._num_episodes):
 
-            if i % 25 == 0:
-                print(f"Episode {i}")
-                if i != 0:
-                    self._train_env.visualise_episode_history(
-                        os.path.join(self._video_path, f"train_{i}.mp4"),
-                        history="train",
-                    )
-                    self._test_env.visualise_episode_history(
-                        os.path.join(self._video_path, f"test_{i}.mp4"), history="test"
-                    )
-                    averaged_heatmap = (
-                        self._test_env.average_values_over_positional_states(
-                            values={
-                                k: np.max(v)
-                                for k, v in self._agent.state_action_values.items()
-                            },
-                        )
-                    )
-                    self._test_env.plot_heatmap_over_env(
-                        averaged_heatmap,
-                        save_name=os.path.join(self._heatmap_path, f"heatmap_{i}.png"),
-                    )
+            if i % self._visualisation_frequency == 0:
+                print(f"Visualising at Episode {i}")
+                self._make_visualisations(i)
 
             train_episode_return, train_episode_length = self._train_episode()
             test_episode_return, test_episode_length = self._test_episode()
@@ -272,3 +254,26 @@ class Runner(base_runner.BaseRunner):
             episode_length += 1
 
         return episode_return, episode_length
+
+    def _make_visualisations(self, idx: int):
+        self._train_env.visualise_episode_history(
+            os.path.join(self._video_path, f"train_{idx}.mp4"),
+            history="train",
+        )
+        self._test_env.visualise_episode_history(
+            os.path.join(self._video_path, f"test_{idx}.mp4"), history="test"
+        )
+        averaged_heatmap = self._test_env.average_values_over_positional_states(
+            values={k: np.max(v) for k, v in self._agent.state_action_values.items()},
+        )
+        self._test_env.plot_heatmap_over_env(
+            averaged_heatmap,
+            save_name=os.path.join(self._heatmap_path, f"value_heatmap_{idx}.png"),
+        )
+        averaged_planning_counts = self._test_env.average_values_over_positional_states(
+            values={k: v for k, v in self._agent.state_planning_counts.items()},
+        )
+        self._test_env.plot_heatmap_over_env(
+            averaged_planning_counts,
+            save_name=os.path.join(self._heatmap_path, f"planning_counts_{idx}.png"),
+        )
