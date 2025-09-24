@@ -68,7 +68,7 @@ class Runner(base_runner.BaseRunner):
                 "random_normal": {"mean": config.mean, "variance": config.variance},
             }
         elif config.initialisation_strategy == "zeros":
-            initialisation_strategy = {"zeros"}
+            initialisation_strategy = {"zeros": {}}
         else:
             raise ValueError(
                 f"Initialisation strategy {config.initialisation_strategy} not recognised."
