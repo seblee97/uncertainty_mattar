@@ -181,8 +181,9 @@ class Runner(base_runner.BaseRunner):
         for i in range(self._num_episodes):
 
             if i % self._visualisation_frequency == 0:
-                print(f"Visualising at Episode {i}")
-                self._make_visualisations(i)
+                if i > 0:
+                    print(f"Visualising at Episode {i}")
+                    self._make_visualisations(i)
 
             train_episode_return, train_episode_length = self._train_episode()
             test_episode_return, test_episode_length = self._test_episode()
