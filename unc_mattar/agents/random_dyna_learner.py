@@ -15,4 +15,6 @@ class RandomDynaLearner(base_dyna_learner.DynaLearner):
             np.random.choice(range(len(self._replay_buffer)))
         )
         transition_sample = transition_sample + (self._planning_lr,)
+
+        self._state_planning_counts[self._id_state_mapping[transition_sample[0]]] += 1
         self._step(*transition_sample)
