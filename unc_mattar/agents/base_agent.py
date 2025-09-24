@@ -30,6 +30,7 @@ class BaseAgent(abc.ABC):
         )
 
         self._state_visitation_counts = {s: 0 for s in self._state_space}
+        self._state_planning_counts = {s: 0 for s in self._state_space}
 
         self._learning_rate = learning_rate
         self._gamma = gamma
@@ -50,6 +51,10 @@ class BaseAgent(abc.ABC):
     @property
     def state_visitation_counts(self) -> Dict[Tuple[int, int], int]:
         return self._state_visitation_counts
+
+    @property
+    def state_planning_counts(self) -> Dict[Tuple[int, int], int]:
+        return self._state_planning_counts
 
     @property
     def state_action_values(self) -> Dict[Tuple[int, int], np.ndarray]:
