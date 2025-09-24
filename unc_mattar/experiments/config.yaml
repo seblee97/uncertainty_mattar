@@ -15,6 +15,7 @@ experiment:
 
 logging:
     checkpoint_frequency: 25
+    visualisation_frequency: 25
     stdout_frequency: 1000
 
 learning:
