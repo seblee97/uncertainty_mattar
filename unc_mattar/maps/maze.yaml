@@ -7,6 +7,10 @@ door_positions: []
 reward_positions:
     - [9, 6]
 
+incoming_teleport_positions: []
+
+outgoing_teleport_positions: []
+
 # provide either one set of statistics (used for all rewards)
 # or one set of statistics for each reward
 reward_statistics:
