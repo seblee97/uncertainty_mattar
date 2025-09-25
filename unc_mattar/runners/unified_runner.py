@@ -39,8 +39,7 @@ class Runner(base_runner.BaseRunner):
         self._post_episode_planning_steps = config.post_episode_planning_steps
         self._k_additional_planning_steps = config.k_additional_planning_steps
 
-        self._max_buffer_size = config.max_buffer_size
-
+        self._buffer_config = self._setup_buffer_config(config)
         self._initialisation_strategy = self._setup_initialisation(config)
         self._setup_logging(config)
 
@@ -61,6 +60,22 @@ class Runner(base_runner.BaseRunner):
         os.makedirs(self._heatmap_path, exist_ok=True)
         self._video_path = os.path.join(self._checkpoint_path, constants.VIDEOS)
         os.makedirs(self._video_path, exist_ok=True)
+
+    @utils.timer
+    def _setup_buffer_config(self, config):
+        if config.buffer == constants.MODEL:
+            buffer_config = {"type": constants.MODEL}
+        elif config.buffer == constants.PER:
+            buffer_config = {
+                "type": constants.PER,
+                "max_buffer_size": config.max_buffer_size,
+            }
+        else:
+            raise ValueError(
+                f"Buffer type {config.buffer} not recognised. "
+                f"Please use '{constants.MODEL}' or '{constants.PER}'."
+            )
+        return buffer_config
 
     @utils.timer
     def _setup_initialisation(self, config):
@@ -108,7 +123,7 @@ class Runner(base_runner.BaseRunner):
                 gamma=self._gamma,
                 beta=self._beta,
                 initialisation_strategy=self._initialisation_strategy,
-                max_buffer_size=self._max_buffer_size,
+                buffer_config=self._buffer_config,
             )
         elif config.runner == constants.EVB:
             agent = evb_dyna_learner.EVBDynaLearner(
@@ -120,7 +135,7 @@ class Runner(base_runner.BaseRunner):
                 gamma=self._gamma,
                 beta=self._beta,
                 initialisation_strategy=self._initialisation_strategy,
-                max_buffer_size=self._max_buffer_size,
+                buffer_config=self._buffer_config,
                 top_k=config.top_k,
                 max_chain=config.max_chain,
                 e_lambda=config.e_lambda,
@@ -184,6 +199,9 @@ class Runner(base_runner.BaseRunner):
                 if i > 0:
                     print(f"Visualising at Episode {i}")
                     self._make_visualisations(i)
+
+            # reset counts
+            self._agent.reset_episode_counts()
 
             train_episode_return, train_episode_length = self._train_episode()
             test_episode_return, test_episode_length = self._test_episode()
@@ -271,10 +289,26 @@ class Runner(base_runner.BaseRunner):
             averaged_heatmap,
             save_name=os.path.join(self._heatmap_path, f"value_heatmap_{idx}.png"),
         )
-        averaged_planning_counts = self._test_env.average_values_over_positional_states(
-            values={k: v for k, v in self._agent.state_planning_counts.items()},
+        averaged_cumulative_planning_counts = (
+            self._test_env.average_values_over_positional_states(
+                values=self._agent.state_planning_counts,
+            )
         )
         self._test_env.plot_heatmap_over_env(
-            averaged_planning_counts,
+            averaged_cumulative_planning_counts,
             save_name=os.path.join(self._heatmap_path, f"planning_counts_{idx}.png"),
+        )
+        averaged_episode_planning_counts = (
+            self._test_env.average_values_over_positional_states(
+                values={
+                    k: v + 1e-10  # to avoid division by zero
+                    for k, v in self._agent.episode_state_planning_counts.items()
+                },
+            )
+        )
+        self._test_env.plot_heatmap_over_env(
+            averaged_episode_planning_counts,
+            save_name=os.path.join(
+                self._heatmap_path, f"episode_planning_counts_{idx}.png"
+            ),
         )
