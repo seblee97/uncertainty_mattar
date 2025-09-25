@@ -48,6 +48,19 @@ class ConfigTemplate:
         level=[constants.LOGGING],
     )
 
+    _per_buffer_template = config_template.Template(
+        fields=[
+            config_field.Field(
+                name=constants.MAX_BUFFER_SIZE,
+                types=[int, type(None)],
+                requirements=[lambda x: x is None or x > 0],
+            ),
+        ],
+        level=[constants.LEARNING, constants.PER_BUFFER],
+        dependent_variables=[constants.BUFFER],
+        dependent_variables_required_values=[[constants.PER]],
+    )
+
     _random_initialisation_template = config_template.Template(
         fields=[
             config_field.Field(
@@ -115,14 +128,14 @@ class ConfigTemplate:
                 requirements=[lambda x: x > 0],
             ),
             config_field.Field(
-                name=constants.MAX_BUFFER_SIZE,
-                types=[int, type(None)],
-                requirements=[lambda x: x is None or x > 0],
-            ),
-            config_field.Field(
                 name=constants.E_LAMBDA,
                 types=[float, int],
                 requirements=[lambda x: x >= 0],
+            ),
+            config_field.Field(
+                name=constants.BUFFER,
+                types=[str],
+                requirements=[lambda x: x in [constants.MODEL, constants.PER]],
             ),
             config_field.Field(
                 name=constants.INITIALISATION_STRATEGY,
@@ -133,7 +146,7 @@ class ConfigTemplate:
             ),
         ],
         level=[constants.LEARNING],
-        nested_templates=[_random_initialisation_template],
+        nested_templates=[_per_buffer_template, _random_initialisation_template],
     )
 
     base_config_template = config_template.Template(
