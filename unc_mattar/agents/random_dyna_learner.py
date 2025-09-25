@@ -11,10 +11,12 @@ class RandomDynaLearner(base_dyna_learner.DynaLearner):
 
     def plan(self, current_state):
         # Sample a random transition from the replay buffer
-        transition_sample = self._replay_buffer.get(
-            np.random.choice(range(len(self._replay_buffer)))
-        )
+        transition_sample = self._replay_buffer.get_random()
         transition_sample = transition_sample + (self._planning_lr,)
 
         self._state_planning_counts[self._id_state_mapping[transition_sample[0]]] += 1
+        self._episode_state_planning_counts[
+            self._id_state_mapping[transition_sample[0]]
+        ] += 1
+
         self._step(*transition_sample)
