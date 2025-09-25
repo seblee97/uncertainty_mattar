@@ -17,7 +17,7 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
         gamma,
         beta,
         initialisation_strategy,
-        max_buffer_size,
+        buffer_config,
         top_k,
         max_chain,
         e_lambda,
@@ -31,7 +31,7 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
             gamma=gamma,
             beta=beta,
             initialisation_strategy=initialisation_strategy,
-            max_buffer_size=max_buffer_size,
+            buffer_config=buffer_config,
         )
 
         self._top_k = top_k
@@ -277,7 +277,11 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
 
         # apply best n-step update
         self._apply_episode_Q1(episode_chain)
+
         self._state_planning_counts[self._id_state_mapping[episode_chain[0][0]]] += 1
+        self._episode_state_planning_counts[
+            self._id_state_mapping[episode_chain[0][0]]
+        ] += 1
 
         return {"applied": True, "evb": best_evb, "gain": best_gain}
 
