@@ -216,7 +216,7 @@ class ModelBuffer:
         random_idx = np.random.choice(valid_indices)
         return self.get(random_idx)
 
-    def predecessors(self, succ: int) -> List[int]:
+    def get_predecessors(self, succ: int) -> List[int]:
         """
         Return flat indices of all (s,a) whose stored successor equals 'succ'.
         """
