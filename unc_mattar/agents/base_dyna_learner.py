@@ -5,8 +5,7 @@ import abc
 
 from typing import Dict, List, Tuple
 
-from collections import deque
-from unc_mattar.utils import ReplayBuffer
+from unc_mattar.utils import ReplayBuffer, ModelBuffer
 
 
 class DynaLearner(base_agent.BaseAgent, abc.ABC):
@@ -22,7 +21,7 @@ class DynaLearner(base_agent.BaseAgent, abc.ABC):
         gamma,
         beta,
         initialisation_strategy,
-        max_buffer_size,
+        buffer_config,
     ):
         super().__init__(
             action_space,
@@ -41,7 +40,21 @@ class DynaLearner(base_agent.BaseAgent, abc.ABC):
             (len(self._state_space), len(self._state_space))
         )
 
-        self._replay_buffer = ReplayBuffer(max_buffer_size)
+        self._replay_buffer = self._setup_buffer(buffer_config)
+
+    def _setup_buffer(self, buffer_config):
+        if buffer_config["type"] == "model":
+            return ModelBuffer(
+                num_states=len(self._state_space),
+                num_actions=len(self._action_space),
+            )
+        elif buffer_config["type"] == "per":
+            return ReplayBuffer(max_size=buffer_config["max_buffer_size"])
+        else:
+            raise ValueError(
+                f"Buffer {buffer_config['type']} not recognised. "
+                "Please use 'model' or 'per'."
+            )
 
     def add_to_replay_buffer(self, state, action, reward, new_state, active):
         state_id = self._state_id_mapping[state]
