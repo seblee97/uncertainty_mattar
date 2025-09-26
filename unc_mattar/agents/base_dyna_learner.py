@@ -108,6 +108,9 @@ class DynaLearner(base_agent.BaseAgent, abc.ABC):
 
         self._step(state_id, action, reward, new_state_id, active, self._learning_rate)
 
+        self._state_visitation_counts[state] += 1
+        self._episode_state_visitation_counts[state] += 1
+
     def _step(self, state_id, action, reward, new_state_id, active, learning_rate):
         if active:
             discount = self._gamma
