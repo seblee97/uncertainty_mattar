@@ -44,6 +44,11 @@ class ConfigTemplate:
                 types=[int],
                 requirements=[lambda x: x > 0],
             ),
+            config_field.Field(
+                name=constants.SAVE_FREQUENCY,
+                types=[int],
+                requirements=[lambda x: x > 0],
+            ),
         ],
         level=[constants.LOGGING],
     )
