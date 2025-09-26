@@ -53,6 +53,7 @@ class Runner(base_runner.BaseRunner):
     def _setup_logging(self, config):
         self._checkpoint_frequency = config.checkpoint_frequency
         self._visualisation_frequency = config.visualisation_frequency
+        self._save_frequency = config.save_frequency
         self._data_columns = self._setup_data_columns()
         self._log_columns = self._get_data_columns()
 
@@ -60,6 +61,8 @@ class Runner(base_runner.BaseRunner):
         os.makedirs(self._heatmap_path, exist_ok=True)
         self._video_path = os.path.join(self._checkpoint_path, constants.VIDEOS)
         os.makedirs(self._video_path, exist_ok=True)
+        self._data_path = os.path.join(self._checkpoint_path, constants.DATA)
+        os.makedirs(self._data_path, exist_ok=True)
 
     @utils.timer
     def _setup_buffer_config(self, config):
@@ -199,6 +202,13 @@ class Runner(base_runner.BaseRunner):
                 if i > 0:
                     print(f"Visualising at Episode {i}")
                     self._make_visualisations(i)
+
+            if i % self._save_frequency == 0:
+                if i > 0:
+                    print(f"Saving data at Episode {i}")
+                    self._agent.save_data(
+                        os.path.join(self._data_path, f"agent_data_{i}.npz")
+                    )
 
             # reset counts
             self._agent.reset_episode_counts()
