@@ -32,10 +32,16 @@ class BaseAgent(abc.ABC):
         # cumulative throughout training
         self._state_visitation_counts = {s: 0 for s in self._state_space}
         self._state_planning_counts = {s: 0 for s in self._state_space}
+        self._per_state_state_planning_counts = {
+            s: {s: 0 for s in self._state_space} for s in self._state_space
+        }
 
         # per episode - reset at start of each episode
         self._episode_state_visitation_counts = {s: 0 for s in self._state_space}
         self._episode_state_planning_counts = {s: 0 for s in self._state_space}
+        self._episode_per_state_state_planning_counts = {
+            s: {s: 0 for s in self._state_space} for s in self._state_space
+        }
 
         self._learning_rate = learning_rate
         self._gamma = gamma
@@ -62,12 +68,24 @@ class BaseAgent(abc.ABC):
         return self._state_planning_counts
 
     @property
+    def per_state_state_planning_counts(
+        self,
+    ) -> Dict[Tuple[int, int], Dict[Tuple[int, int], int]]:
+        return self._per_state_state_planning_counts
+
+    @property
     def episode_state_visitation_counts(self) -> Dict[Tuple[int, int], int]:
         return self._episode_state_visitation_counts
 
     @property
     def episode_state_planning_counts(self) -> Dict[Tuple[int, int], int]:
         return self._episode_state_planning_counts
+
+    @property
+    def episode_per_state_state_planning_counts(
+        self,
+    ) -> Dict[Tuple[int, int], Dict[Tuple[int, int], int]]:
+        return self._episode_per_state_state_planning_counts
 
     @property
     def state_action_values(self) -> Dict[Tuple[int, int], np.ndarray]:
@@ -77,9 +95,24 @@ class BaseAgent(abc.ABC):
         }
         return values
 
+    def save_data(self, path: str):
+        np.savez_compressed(
+            path,
+            state_action_values=self._state_action_values,
+            state_visitation_counts=self._state_visitation_counts,
+            state_planning_counts=self._state_planning_counts,
+            per_state_state_planning_counts=self._per_state_state_planning_counts,
+            episode_state_visitation_counts=self._episode_state_visitation_counts,
+            episode_state_planning_counts=self._episode_state_planning_counts,
+            episode_per_state_state_planning_counts=self._episode_per_state_state_planning_counts,
+        )
+
     def reset_episode_counts(self):
         self._episode_state_visitation_counts = {s: 0 for s in self._state_space}
         self._episode_state_planning_counts = {s: 0 for s in self._state_space}
+        self._episode_per_state_state_planning_counts = {
+            s: {s: 0 for s in self._state_space} for s in self._state_space
+        }
 
     def _initialise_values(
         self, initialisation_strategy: Dict[str, Dict]
