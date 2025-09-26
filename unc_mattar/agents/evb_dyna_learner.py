@@ -278,10 +278,11 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
         # apply best n-step update
         self._apply_episode_Q1(episode_chain)
 
-        self._state_planning_counts[self._id_state_mapping[episode_chain[0][0]]] += 1
-        self._episode_state_planning_counts[
-            self._id_state_mapping[episode_chain[0][0]]
-        ] += 1
+        state_from_id = self._id_state_mapping[episode_chain[0][0]]
+        self._state_planning_counts[state_from_id] += 1
+        self._per_state_state_planning_counts[current_state][state_from_id] += 1
+        self._episode_state_planning_counts[state_from_id] += 1
+        self._episode_per_state_state_planning_counts[current_state][state_from_id] += 1
 
         return {"applied": True, "evb": best_evb, "gain": best_gain}
 
