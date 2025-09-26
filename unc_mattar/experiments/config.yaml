@@ -17,6 +17,7 @@ logging:
     checkpoint_frequency: 25
     visualisation_frequency: 25
     stdout_frequency: 1000
+    save_frequency: 25
 
 learning:
     learning_rate: 0.1
