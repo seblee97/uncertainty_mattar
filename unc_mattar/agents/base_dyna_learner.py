@@ -118,9 +118,9 @@ class DynaLearner(base_agent.BaseAgent, abc.ABC):
             discount = 0
 
         initial_value = self._state_action_values[state_id][action]
-        new_sate_values = self._state_action_values[new_state_id]
+        new_state_values = self._state_action_values[new_state_id]
 
         updated_value = initial_value + learning_rate * (
-            reward + discount * np.max(new_sate_values) - initial_value
+            reward + discount * np.max(new_state_values) - initial_value
         )
         self._state_action_values[state_id][action] = updated_value
