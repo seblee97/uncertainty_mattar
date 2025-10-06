@@ -151,20 +151,26 @@ class Runner(base_runner.BaseRunner):
 
     @utils.timer
     def _populate_transition_matrix(self):
-        dummy_env = copy.deepcopy(self._train_env)
+        dummy_env = copy.deepcopy(self._test_env)
+
+        # very hacky for now
+        reward_positions = dummy_env._env._rewards.keys()
+        start = dummy_env._env._starting_xy
 
         for state in dummy_env.state_space:
             for action in dummy_env.action_space:
-                dummy_env.reset_environment(train=True)
-                dummy_env._agent_position = state
-                rew, new_state = dummy_env.step(action)
+                if state in reward_positions:
+                    rew, new_state = 0.0, start
+                else:
+                    dummy_env.reset_environment(train=True)
+                    dummy_env._agent_position = state
+                    rew, new_state = dummy_env.step(action)
                 self._agent.increment_transition_matrix(state, new_state)
                 self._agent.add_to_replay_buffer(
                     state, action, rew, new_state, dummy_env.active
                 )
 
         self._agent.normalise_transition_matrix()
-        # TODO: transition from reward to start state
 
     def _get_data_columns(self):
         """Output data columns to be logged by runner."""
