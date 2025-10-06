@@ -3,6 +3,19 @@ from unc_mattar.agents import base_dyna_learner
 import numpy as np
 
 
+def _stable_softmax(q_batch: np.ndarray, beta: float) -> np.ndarray:
+    """
+    q_batch: shape (B, A) or (1, A)
+    beta: inverse temperature
+    returns probs with same leading shape as q_batch
+    """
+    if q_batch.ndim == 1:
+        q_batch = q_batch[None, :]  # (1, A)
+    shifted = beta * (q_batch - np.max(q_batch, axis=1, keepdims=True))
+    exp_ = np.exp(shifted)
+    return exp_ / np.sum(exp_, axis=1, keepdims=True)
+
+
 class EVBDynaLearner(base_dyna_learner.DynaLearner):
     """EVB as criterion for planning sampling. Replicates Mattar & Daw 2018."""
 
@@ -59,21 +72,23 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
         q_updated = q_current + self._planning_lr * (q_target - q_current)
 
         # Compute gains from hypothetical updates
-        old_softmax_denominator = np.sum(
-            np.exp(self._beta * self._state_action_values[state_ids]), axis=1
-        )
-        new_softmax_denominator = (
-            old_softmax_denominator
-            - np.exp(self._beta * q_current)
-            + np.exp(self._beta * q_updated)
-        )
+        # old_softmax_denominator = np.sum(
+        #     np.exp(self._beta * self._state_action_values[state_ids]), axis=1
+        # )
+        # new_softmax_denominator = (
+        #     old_softmax_denominator
+        #     - np.exp(self._beta * q_current)
+        #     + np.exp(self._beta * q_updated)
+        # )
 
         old_q = self._state_action_values[state_ids]
         new_q = old_q.copy()
         new_q[np.arange(len(q_updated)), actions] = q_updated
 
-        old_policy = np.exp(self._beta * old_q) / old_softmax_denominator[:, None]
-        new_policy = np.exp(self._beta * new_q) / new_softmax_denominator[:, None]
+        # old_policy = np.exp(self._beta * old_q) / old_softmax_denominator[:, None]
+        old_policy = _stable_softmax(old_q, self._beta)
+        new_policy = _stable_softmax(new_q, self._beta)
+        # new_policy = np.exp(self._beta * new_q) / new_softmax_denominator[:, None]
 
         v_new = np.sum(new_policy * new_q, axis=1)
         v_old = np.sum(old_policy * old_q, axis=1)
@@ -132,17 +147,6 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
             chain.insert(0, link)
 
         return chain + [s_k]
-
-    def _get_n_step_target(self, trajectory):
-        """
-        # TODO
-        """
-        G, g = 0.0, 1.0
-        for _, _, r in trajectory[:-1]:
-            G += g * r
-            g *= self._gamma
-        G += g * np.max(self._state_action_values[trajectory[-1]])
-        return G
 
     def _score_episode_Q1_evb(self, episode_chain, sr_row):
         Q_h = self._state_action_values.copy()
