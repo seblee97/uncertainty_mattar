@@ -163,7 +163,7 @@ class Runner(base_runner.BaseRunner):
                     rew, new_state = 0.0, start
                 else:
                     dummy_env.reset_environment(train=True)
-                    dummy_env._agent_position = state
+                    dummy_env._env._agent_position = np.array(state[:2])
                     rew, new_state = dummy_env.step(action)
                 self._agent.increment_transition_matrix(state, new_state)
                 self._agent.add_to_replay_buffer(
