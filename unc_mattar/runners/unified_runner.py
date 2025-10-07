@@ -219,8 +219,8 @@ class Runner(base_runner.BaseRunner):
             # reset counts
             self._agent.reset_episode_counts()
 
-            train_episode_return, train_episode_length = self._train_episode()
             test_episode_return, test_episode_length = self._test_episode()
+            train_episode_return, train_episode_length = self._train_episode()
 
             self._data_columns[constants.TRAIN_EPISODE_RETURN][
                 self._data_index
