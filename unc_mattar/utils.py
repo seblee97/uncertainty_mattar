@@ -221,12 +221,29 @@ class ModelBuffer:
         Return flat indices of all (s,a) whose stored successor equals 'succ'.
         """
         out = []
-        i = self._heads[succ]
+        i = self._heads[succ]  # returns (latest) state, action index preceding succ
         while i != -1:
             if self._next_states[i] == succ:
                 out.append(int(i))
             i = self._nexts[i]
         return out
+
+    def get_successors(self, pred: int) -> List[int]:
+        """
+        Return flat indices of all (s,a) whose stored predecessor equals 'pred'.
+        """
+        # out = []
+
+        # for i in range(self._N):
+        #     if self._state_of[i] == pred and self._next_states[i] != -1:
+        #         out.append(int(i))
+        # return out
+
+        start = pred * self._num_actions
+        end = start + self._num_actions
+        idxs = np.arange(start, end)
+        valid = self._next_states[idxs] != -1
+        return [int(i) for i in idxs[valid]]
 
     # def arrays_for_valid(self):
     #     """
