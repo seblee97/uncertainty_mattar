@@ -100,7 +100,7 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
 
         return idx, evbs[idx]
 
-    def _get_continuation_chain(self, tail_idx):
+    def _get_continuation_chain(self, tail_idx, direction):
         """
         # TODO
         """
@@ -112,22 +112,43 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
             # Return minimal episode: one link + successor state
             return chain + [s_k]
 
+        # choose neighbor accessor based on direction
+        def next_links_from(state):
+            if direction == "backward":
+                # predecessors that lead into 'state'
+                return [
+                    self._replay_buffer.get(idx)
+                    for idx in self._replay_buffer.get_predecessors(state)
+                ]
+            elif direction == "forward":
+                # successors that start at 'state'
+                return [
+                    self._replay_buffer.get(idx)
+                    for idx in self._replay_buffer.get_successors(state)
+                ]
+
         while len(chain) < self._max_chain:
             head_s, head_a, _, head_active = chain[0]
             if not head_active:  # head successor is terminal; cannot extend further
                 break
 
-            predecessors = self._replay_buffer.get_predecessors(head_s)
-            if not predecessors:
+            # predecessors = self._replay_buffer.get_predecessors(head_s)
+            # if not predecessors:
+            #     break
+
+            candidates = next_links_from(head_s)
+            if not candidates:
                 break
 
             link = None
 
-            for predecessor_idx in predecessors:
-                predecessor = self._replay_buffer.get(predecessor_idx)
+            for candidate in candidates:
 
-                s_pred, a_pred, r_pred, s_next_pred, active_pred = predecessor
-                if s_next_pred != head_s:
+                s_pred, a_pred, r_pred, s_next_pred, active_pred = candidate
+
+                if direction == "backward" and s_next_pred != head_s:
+                    continue
+                if direction == "forward" and s_pred != head_s:
                     continue
 
                 # predecessor must be greedy now; head action must still be greedy
@@ -144,7 +165,10 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
             if link is None:
                 break
 
-            chain.insert(0, link)
+            if direction == "backward":
+                chain.insert(0, link)
+            elif direction == "forward":
+                chain.append(link)
 
         return chain + [s_k]
 
@@ -187,7 +211,7 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
             e *= self._gamma * self._lambda
 
             # local gain at s_t
-            local_gain = np.max(Q_h[s_t]) - value_old
+            local_gain = np.max(Q_h[s_t]) - value_old + 10e-10
             if local_gain > 0:
                 accumulated_gain += local_gain
 
@@ -264,7 +288,14 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
         idx, evbs = self._get_best_evb_transitions(buffer, sr_row)
 
         # use best as seed tail to build n-step chain
-        episode_chains = [self._get_continuation_chain(idx_i) for idx_i in idx]
+        backward_episode_chains = [
+            self._get_continuation_chain(idx_i, "backward") for idx_i in idx
+        ]
+        forward_episode_chains = [
+            self._get_continuation_chain(idx_i, "forward") for idx_i in idx
+        ]
+
+        episode_chains = forward_episode_chains + backward_episode_chains
 
         best_evb, best_i, best_gain = -0.0, None, 0.0
         for i, episode_chain in enumerate(episode_chains):
