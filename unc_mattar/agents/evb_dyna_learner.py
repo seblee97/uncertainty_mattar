@@ -104,9 +104,10 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
         """
         # TODO
         """
-        s_tail, a_tail, r_tail, s_k, active_tail = self._replay_buffer.get(tail_idx)
+        s_tail, a_tail, r_tail, s_k_o, active_tail = self._replay_buffer.get(tail_idx)
 
-        chain = [(s_tail, a_tail, r_tail, active_tail)]
+        chain = [(s_tail, a_tail, r_tail, s_k_o, active_tail)]
+        s_k = s_k_o
 
         if a_tail != np.argmax(self._state_action_values[s_tail]) or not active_tail:
             # Return minimal episode: one link + successor state
@@ -128,7 +129,7 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
                 ]
 
         while len(chain) < self._max_chain:
-            head_s, head_a, _, head_active = chain[0]
+            head_s, head_a, _, head_snext, head_active = chain[0]
             if not head_active:  # head successor is terminal; cannot extend further
                 break
 
@@ -136,7 +137,7 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
             # if not predecessors:
             #     break
 
-            candidates = next_links_from(head_s)
+            candidates = next_links_from(head_s if direction == "backward" else s_k)
             if not candidates:
                 break
 
@@ -148,18 +149,23 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
 
                 if direction == "backward" and s_next_pred != head_s:
                     continue
-                if direction == "forward" and s_pred != head_s:
+                if direction == "forward" and s_pred != s_k:
                     continue
 
                 # predecessor must be greedy now; head action must still be greedy
                 greedy_a_pred = np.argmax(self._state_action_values[s_pred])
                 if a_pred != greedy_a_pred:
                     continue
-                greedy_a_chain = np.argmax(self._state_action_values[head_s])
+
+                greedy_a_chain = np.argmax(
+                    self._state_action_values[
+                        head_s if direction == "backward" else s_pred
+                    ]
+                )
                 if head_a != greedy_a_chain:
                     continue
 
-                link = (s_pred, a_pred, r_pred, active_pred)
+                link = (s_pred, a_pred, r_pred, s_next_pred, active_pred)
                 break
 
             if link is None:
@@ -169,6 +175,7 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
                 chain.insert(0, link)
             elif direction == "forward":
                 chain.append(link)
+                s_k = link[3]
 
         return chain + [s_k]
 
@@ -184,16 +191,16 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
         if isinstance(episode_chain[-1], (int, np.integer)):
             s_k = episode_chain[-1]
         else:
-            s_k = episode_chain[-1][0]
+            s_k = episode_chain[-1][3]
 
         T = len(episode_chain) - 1
 
         for t in range(T):
-            s_t, a_t, r_t, active_t = episode_chain[t]
-            if isinstance(episode_chain[t + 1], (int, np.integer)):
-                s_tp = episode_chain[t + 1]
-            else:
-                s_tp = episode_chain[t + 1][0]
+            s_t, a_t, r_t, s_tp, active_t = episode_chain[t]
+            # if isinstance(episode_chain[t + 1], (int, np.integer)):
+            #     s_tp = episode_chain[t + 1]
+            # else:
+            #     s_tp = episode_chain[t + 1][0]
 
             # if a_t != np.argmax(Q_h[s_t]):
             #     e[:] = 0.0
@@ -240,11 +247,11 @@ class EVBDynaLearner(base_dyna_learner.DynaLearner):
             T = len(episode_chain) - 1
 
             for t in range(T):
-                s_t, a_t, r_t, active_t = episode_chain[t]
-                if isinstance(episode_chain[t + 1], (int, np.integer)):
-                    s_tp = episode_chain[t + 1]
-                else:
-                    s_tp = episode_chain[t + 1][0]
+                s_t, a_t, r_t, s_tp, active_t = episode_chain[t]
+                # if isinstance(episode_chain[t + 1], (int, np.integer)):
+                #     s_tp = episode_chain[t + 1]
+                # else:
+                #     s_tp = episode_chain[t + 1][0]
 
                 value_old = np.max(self._state_action_values[s_t])
 
